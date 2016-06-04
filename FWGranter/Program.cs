@@ -21,8 +21,8 @@ namespace FWGranter
             Console.WriteLine("param2:");
             Console.WriteLine(" -a [appPath]");
             Console.WriteLine(" -a [appPath] [appName]");
-            Console.WriteLine(" -r -p [appPath]");
-            Console.WriteLine(" -r -p [appPath]");
+            Console.WriteLine(" -rP [appPath]");
+            Console.WriteLine(" -rN [appName]");
             Console.WriteLine("Example:");
             Console.WriteLine(" fwgranter -a \"c:\\myApp.exe\"");
             Console.WriteLine(" fwgranter -a \"c:\\myApp.exe\" \"superApp\"");
