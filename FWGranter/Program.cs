@@ -2,6 +2,7 @@
 using FWGranter.Properties;
 using System;
 using System.IO;
+using System.Windows.Forms;
 
 namespace FWGranter
 {
@@ -21,16 +22,105 @@ namespace FWGranter
             Console.WriteLine("param2:");
             Console.WriteLine(" -a [appPath]");
             Console.WriteLine(" -a [appPath] [appName]");
+            Console.WriteLine(" -a -g");
             Console.WriteLine(" -rP [appPath]");
+            Console.WriteLine(" -rP -g");
             Console.WriteLine(" -rN [appName]");
             Console.WriteLine("Example:");
             Console.WriteLine(" fwgranter -a \"c:\\myApp.exe\"");
             Console.WriteLine(" fwgranter -a \"c:\\myApp.exe\" \"superApp\"");
+            Console.WriteLine(" fwgranter -a -g");
             Console.WriteLine(" fwgranter -rP \"c:\\myApp.exe\"");
+            Console.WriteLine(" fwgranter -rP -g");
             Console.WriteLine(" fwgranter -rN \"superApp\"");
             Console.WriteLine(" fwgranter -s");
         }
 
+        private static string PickAFile()
+        {
+            using (OpenFileDialog dlg = new OpenFileDialog())
+            {
+                dlg.Title = "FWGranter - Select an application.";
+                dlg.Filter = "Excutable files|*.exe|All files|*.*";
+                if (dlg.ShowDialog() == DialogResult.OK)
+                    return dlg.FileName;
+                return null;
+            }
+        }
+
+        private static void AddException(string[] args, FirewallHelper fwHelper)
+        {
+            string appName;
+            if (args.Length == 2)
+            {
+                string appPath = args[1] == "-g" ? PickAFile() : Path.GetFullPath(args[1]);
+                if (appPath != null)
+                {
+                    appName = Path.GetFileNameWithoutExtension(appPath);
+                    fwHelper.GrantRule(Path.GetFullPath(appPath), appName, Resources.description);
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else if (args.Length == 3)
+            {
+                string appPath = args[1];
+                appName = args[2];
+                fwHelper.GrantRule(Path.GetFullPath(appPath), appName, Resources.description);
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException("-a just has 1 or 2 options.");
+            }
+            Console.WriteLine("Added {0} to exceptions list.", appName);
+        }
+
+        private static void RemoveExceptionByPath(string[] args, FirewallHelper fwHelper)
+        {
+            if (args.Length == 2)
+            {
+                string appPath = args[1] == "-g" ? PickAFile() : Path.GetFullPath(args[1]);
+                if (appPath != null)
+                {
+                    string appName = Path.GetFileNameWithoutExtension(appPath);
+                    fwHelper.RemoveRule(appName);
+                    Console.WriteLine("Removed {0} to exceptions list.", appName);
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException("-rP just has option.");
+            }
+        }
+
+        private static void RemoveExceptionByName(string[] args, FirewallHelper fwHelper)
+        {
+            if (args.Length == 2)
+            {
+                string appName = args[1];
+                fwHelper.RemoveRule(appName);
+                Console.WriteLine("Removed {0} to exceptions list.", args[1]);
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException("-rN just has option.");
+            }
+        }
+
+        private static void ShowFWStatus(string[] args, FirewallHelper fwHelper)
+        {
+            Console.WriteLine("Firewall is installed: {0}", fwHelper.IsFirewallInstalled ? "YES" : "NO");
+            Console.WriteLine("Firewall is enabled: {0}", fwHelper.IsFirewallEnabled ? "YES" : "NO");
+            Console.WriteLine("Firewall allows exceptions: {0}", fwHelper.AppAuthorizationsAllowed ? "YES" : "NO");
+        }
+
+        [STAThread]
         private static void Main(string[] args)
         {
             if (args.Length == 0)
@@ -45,58 +135,19 @@ namespace FWGranter
                     FirewallHelper fwHelper = FirewallHelper.Instance;
                     if (func == "-a")
                     {
-                        string appName;
-                        if (args.Length == 2)
-                        {
-                            string appPath = args[1];
-                            appName = Path.GetFileNameWithoutExtension(appPath);
-                            fwHelper.GrantRule(Path.GetFullPath(appPath), appName, Resources.description);
-                        }
-                        else if (args.Length == 3)
-                        {
-                            string appPath = args[1];
-                            appName = args[2];
-                            fwHelper.GrantRule(Path.GetFullPath(appPath), appName, Resources.description);
-                            Console.WriteLine("Added {0} to exceptions list.", appName);
-                        }
-                        else
-                        {
-                            throw new ArgumentOutOfRangeException("-a just has 1 or 2 options.");
-                        }
-                        Console.WriteLine("Added {0} to exceptions list.", appName);
+                        AddException(args, fwHelper);
                     }
                     else if (func == "-rP")
                     {
-                        if (args.Length == 2)
-                        {
-                            string appPath = args[1];
-                            string appName = Path.GetFileNameWithoutExtension(appPath);
-                            fwHelper.RemoveRule(appName);
-                            Console.WriteLine("Removed {0} to exceptions list.", appName);
-                        }
-                        else
-                        {
-                            throw new ArgumentOutOfRangeException("-rP just has option.");
-                        }
+                        RemoveExceptionByPath(args, fwHelper);
                     }
                     else if (func == "-rN")
                     {
-                        if (args.Length == 2)
-                        {
-                            string appName = args[1];
-                            fwHelper.RemoveRule(appName);
-                            Console.WriteLine("Removed {0} to exceptions list.", args[1]);
-                        }
-                        else
-                        {
-                            throw new ArgumentOutOfRangeException("-rN just has option.");
-                        }
+                        RemoveExceptionByName(args, fwHelper);
                     }
                     else if (func == "-s")
                     {
-                        Console.WriteLine("Firewall is installed: {0}", fwHelper.IsFirewallInstalled ? "YES" : "NO");
-                        Console.WriteLine("Firewall is enabled: {0}", fwHelper.IsFirewallEnabled ? "YES" : "NO");
-                        Console.WriteLine("Firewall allows exceptions: {0}", fwHelper.AppAuthorizationsAllowed ? "YES" : "NO");
+                        ShowFWStatus(args, fwHelper);
                     }
                     else
                     {
