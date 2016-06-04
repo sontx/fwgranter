@@ -31,24 +31,6 @@ namespace FWGranter
             Console.WriteLine(" fwgranter -s");
         }
 
-        private static bool AnalyseArguments(string[] args, out string param1, out string param2)
-        {
-            param1 = null;
-            param2 = null;
-            if (args.Length != 2) return false;
-            param1 = args[0];
-            param2 = args[1];
-            switch (param1)
-            {
-                case "-add":
-                    return File.Exists(param2);
-
-                case "-rem":
-                    return true;
-            }
-            return false;
-        }
-
         private static void Main(string[] args)
         {
             if (args.Length == 0)
